@@ -6,7 +6,7 @@
 
 A Flutter package for seamless Telegram login integration using Telegram OAuth. This package provides both a ready-to-use button widget and core authentication functionality for custom implementations.
 
-![Telegram Login Demo]() 
+![Telegram Login Demo](https://github.com/FeyselNassir/telegram_login_flutter/blob/main/example/image/example.jpg) 
 
 ## Features
 
