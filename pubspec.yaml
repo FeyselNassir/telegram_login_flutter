@@ -1,7 +1,7 @@
 name: telegram_login_flutter
-description: "A new Flutter package project."
-version: 0.0.1
-homepage:
+description: "A Flutter package for seamless Telegram login integration using Telegram OAuth."
+version: 1.0.0
+homepage: https://github.com/FeyselNassir/telegram_login_flutter
 
 environment:
   sdk: ^3.5.2
