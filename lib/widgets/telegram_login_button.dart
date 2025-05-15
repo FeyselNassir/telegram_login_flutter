@@ -14,7 +14,7 @@ class TelegramLoginButton extends StatefulWidget {
   final bool showLoading;
 
   const TelegramLoginButton({
-    Key? key,
+    super.key,
     required this.botId,
     required this.botDomain,
     required this.phoneNumber,
@@ -24,9 +24,10 @@ class TelegramLoginButton extends StatefulWidget {
     this.child,
     this.style,
     this.showLoading = true,
-  }) : super(key: key);
+  });
 
   @override
+  // ignore: library_private_types_in_public_api
   _TelegramLoginButtonState createState() => _TelegramLoginButtonState();
 }
 

@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  telegram_login_flutter:
-    path: ../
+  telegram_login_flutter: ^1.0.1
+   
 
 dev_dependencies:
   flutter_test:

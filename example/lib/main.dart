@@ -96,8 +96,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildUserInfo() {
-  
-    String? photoUrl = _user!.photoUrl.isNotEmpty 
+    // Fix photo URL by removing double slashes
+    String? photoUrl = _user!.photoUrl.isNotEmpty
         ? _user!.photoUrl.replaceAll(RegExp(r'(?<!:)/+'), '/')
         : null;
 
@@ -107,7 +107,8 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('User Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('User Information',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const Divider(),
             if (photoUrl != null)
               Center(
@@ -122,11 +123,20 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             const SizedBox(height: 16),
             _buildInfoRow('First Name', _user!.firstName),
-            if (_user!.lastName.isNotEmpty) _buildInfoRow('Last Name', _user!.lastName),
-            _buildInfoRow('Username', _user!.username.isNotEmpty ? '@${_user!.username}' : 'Not provided'),
+            if (_user!.lastName.isNotEmpty)
+              _buildInfoRow('Last Name', _user!.lastName),
+            _buildInfoRow(
+                'Username',
+                _user!.username.isNotEmpty
+                    ? '@${_user!.username}'
+                    : 'Not provided'),
             _buildInfoRow('User ID', _user!.id),
-            _buildInfoRow('Auth Date', DateTime.fromMillisecondsSinceEpoch(int.parse(_user!.authDate)).toString()),
-            _buildInfoRow('Hash', _user!.hash.substring(0, 12) + '...'), // Show partial hash
+            _buildInfoRow(
+                'Auth Date',
+                DateTime.fromMillisecondsSinceEpoch(int.parse(_user!.authDate))
+                    .toString()),
+            _buildInfoRow('Hash',
+                '${_user!.hash.substring(0, 12)}...'), // Show partial hash
           ],
         ),
       ),
@@ -140,7 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           SizedBox(
             width: 100,
-            child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text('$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           Expanded(child: Text(value)),
         ],
@@ -165,6 +176,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final initiated = await telegramAuth.initiateLogin();
       if (!initiated) throw Exception('Failed to initiate login');
 
+      // Step 2: Launch Telegram
+      await telegramAuth.launchTelegram();
+
+      // Step 3: Check login status periodically
       bool isLoggedIn = false;
       final timeout = DateTime.now().add(const Duration(seconds: 60));
 

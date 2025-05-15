@@ -23,7 +23,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  telegram_login_flutter: ^1.0.0
+  telegram_login_flutter: ^1.0.1
 
 ```
   

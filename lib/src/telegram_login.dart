@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:html/parser.dart' show parse;
 import 'package:telegram_login_flutter/src/models/telegram_user.dart';
 import 'package:telegram_login_flutter/src/session.dart';
@@ -21,15 +20,38 @@ class TelegramAuth {
   });
 
   Future<void> launchTelegram() async {
-    if (botId.isEmpty) {
-      throw Exception('Bot ID is not set');
-    }
-    final url = 'https://t.me/$botId';
-    if (!await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.externalApplication,
-    )) {
-      throw Exception('Could not launch Telegram');
+    final Uri serviceChatUri = Uri.parse('tg://openmessage?user_id=777000');
+
+    final Uri telegramAppUri = Uri.parse('tg://');
+
+    final Uri webUri = Uri.parse('https://telegram.org');
+
+    try {
+      // Try to open Service Notifications chat
+      bool launched = await launchUrl(
+        serviceChatUri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      // If failed, try opening the main Telegram app
+      if (!launched) {
+        launched = await launchUrl(
+          telegramAppUri,
+          mode: LaunchMode.externalApplication,
+        );
+      }
+
+      // If both app attempts failed, open website
+      if (!launched) {
+        if (!await launchUrl(webUri, mode: LaunchMode.externalApplication)) {
+          throw Exception('Could not open Telegram');
+        }
+      }
+    } catch (e) {
+      // If any error occurs, try opening the website
+      if (!await launchUrl(webUri, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not open Telegram');
+      }
     }
   }
 
@@ -43,7 +65,7 @@ class TelegramAuth {
       final cleanedPhone = phoneNumber
           .replaceAll(RegExp(r'\+'), '')
           .replaceAll(RegExp(r' '), '');
-          
+
       final response = await _session.post(
         'https://oauth.telegram.org/auth/request?bot_id=$botId&origin=$botDomain&embed=1',
         headers,
@@ -89,7 +111,8 @@ class TelegramAuth {
         {},
       );
 
-      if (response.contains('postMessage(JSON.stringify({event: \'auth_result\'')) {
+      if (response
+          .contains('postMessage(JSON.stringify({event: \'auth_result\'')) {
         final regex = RegExp(r'result: ({.*}), origin');
         final match = regex.firstMatch(response);
 
@@ -131,13 +154,18 @@ class TelegramAuth {
 
   Map<String, dynamic> _parseUserData(String jsonString) {
     final userData = <String, dynamic>{};
-    
+
     final idMatch = RegExp(r'"id":\s*"?(\d+)"?').firstMatch(jsonString);
-    final firstNameMatch = RegExp(r'"first_name":\s*"(.*?)"').firstMatch(jsonString);
-    final lastNameMatch = RegExp(r'"last_name":\s*"(.*?)"').firstMatch(jsonString);
-    final usernameMatch = RegExp(r'"username":\s*"(.*?)"').firstMatch(jsonString);
-    final photoUrlMatch = RegExp(r'"photo_url":\s*"(.*?)"').firstMatch(jsonString);
-    final authDateMatch = RegExp(r'"auth_date":\s*"?(\d+)"?').firstMatch(jsonString);
+    final firstNameMatch =
+        RegExp(r'"first_name":\s*"(.*?)"').firstMatch(jsonString);
+    final lastNameMatch =
+        RegExp(r'"last_name":\s*"(.*?)"').firstMatch(jsonString);
+    final usernameMatch =
+        RegExp(r'"username":\s*"(.*?)"').firstMatch(jsonString);
+    final photoUrlMatch =
+        RegExp(r'"photo_url":\s*"(.*?)"').firstMatch(jsonString);
+    final authDateMatch =
+        RegExp(r'"auth_date":\s*"?(\d+)"?').firstMatch(jsonString);
     final hashMatch = RegExp(r'"hash":\s*"(.*?)"').firstMatch(jsonString);
 
     userData['id'] = idMatch?.group(1) ?? '';
