@@ -1,4 +1,5 @@
 import 'package:html/parser.dart' show parse;
+import 'package:telegram_login_flutter/src/models/login_response.dart';
 import 'package:telegram_login_flutter/src/models/telegram_user.dart';
 import 'package:telegram_login_flutter/src/session.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -77,7 +78,10 @@ class TelegramAuth {
     }
   }
 
-  Future<bool> checkLoginStatus() async {
+  Future<LoginResponse> checkLoginStatus() async {
+    /// Checks the login status.
+    ///
+    /// Returns `true` or `false` if the result is done, or `null` if the status is still loading.
     final headers = {
       'Content-length': '0',
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -90,19 +94,33 @@ class TelegramAuth {
         headers,
         '',
       );
-      return response.trim().toLowerCase() == 'true';
+
+      switch (response.trim().toLowerCase()) {
+        case 'true':
+          return LoginResponse.success();
+        case 'declined by the user':
+          return LoginResponse.failure('User declined the login request');
+        default:
+          return LoginResponse.loading();
+      }
     } catch (e) {
       throw Exception('Failed to check login status: $e');
     }
   }
 
   Future<TelegramUser?> getUserData() async {
-    bool isLoggedIn = await checkLoginStatus();
-    if (!isLoggedIn) {
-      final loginSuccess = await initiateLogin();
-      if (!loginSuccess) {
-        throw Exception('Re-authentication failed');
-      }
+    LoginResponse loginResponse = await checkLoginStatus();
+
+    switch (loginResponse.result) {
+      case LoginStatus.success:
+        break;
+      case LoginStatus.failure:
+        final loginSuccess = await initiateLogin();
+        if (!loginSuccess) {
+          throw Exception('Re-authentication failed');
+        }
+      case LoginStatus.loading:
+        throw Exception('Login is still in progress, please wait.');
     }
 
     try {

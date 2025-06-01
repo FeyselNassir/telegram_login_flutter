@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:telegram_login_flutter/src/models/login_response.dart';
 import 'package:telegram_login_flutter/src/models/telegram_user.dart';
 import 'package:telegram_login_flutter/src/telegram_login.dart';
 
@@ -55,11 +56,19 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
       TelegramUser? user;
 
       while (DateTime.now().difference(startTime) < widget.timeout) {
-        isLoggedIn = await telegramAuth.checkLoginStatus();
-        if (isLoggedIn) {
+        final LoginResponse loginResponse = await telegramAuth.checkLoginStatus();
+        if (loginResponse.result == LoginStatus.success) {
           user = await telegramAuth.getUserData();
+          isLoggedIn = true;
           break;
+        } else if (loginResponse.result == LoginStatus.failure) {
+          throw Exception(
+            loginResponse.error ?? 'Login failed',
+          );
+        } else if (loginResponse.result == LoginStatus.loading) {
+          // Still loading, wait and check again
         }
+
         await Future.delayed(const Duration(seconds: 2));
       }
 
