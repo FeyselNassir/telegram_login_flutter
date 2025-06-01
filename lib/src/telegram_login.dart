@@ -231,10 +231,12 @@ class TelegramAuth {
 
     // Sort keys and create data-check-string without empty values
     final sortedKeys = data.keys.toList()..sort();
-    final dataCheckString = sortedKeys
+    String dataCheckString = sortedKeys
         .where((key) => data[key] != null && data[key].toString().isNotEmpty)
         .map((key) => '$key=${data[key]}')
         .join('\n');
+
+    dataCheckString = dataCheckString.replaceAll('\\/', '/');
 
     // Compute HMAC-SHA256 using SHA256(botToken) as secret key
     final secretKey = sha256.convert(utf8.encode(botToken)).bytes;
