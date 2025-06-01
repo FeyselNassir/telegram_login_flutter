@@ -5,6 +5,7 @@ import 'package:telegram_login_flutter/src/telegram_login.dart';
 
 class TelegramLoginButton extends StatefulWidget {
   final String botId;
+  final String botToken;
   final String botDomain;
   final String phoneNumber;
   final Duration timeout;
@@ -17,6 +18,7 @@ class TelegramLoginButton extends StatefulWidget {
   const TelegramLoginButton({
     super.key,
     required this.botId,
+    required this.botToken,
     required this.botDomain,
     required this.phoneNumber,
     this.timeout = const Duration(seconds: 60),
@@ -44,6 +46,7 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
       final telegramAuth = TelegramAuth(
         phoneNumber: widget.phoneNumber,
         botId: widget.botId,
+        botToken: widget.botToken,
         botDomain: widget.botDomain,
         timeout: widget.timeout,
       );

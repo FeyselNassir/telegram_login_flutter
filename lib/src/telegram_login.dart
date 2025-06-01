@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:telegram_login_flutter/src/models/login_response.dart';
 import 'package:telegram_login_flutter/src/models/telegram_user.dart';
@@ -8,6 +11,7 @@ class TelegramAuth {
   final TelegramSession _session = TelegramSession();
   final String phoneNumber;
   final String botId;
+  final String botToken;
   final String botDomain;
   final Duration timeout;
 
@@ -16,6 +20,7 @@ class TelegramAuth {
   TelegramAuth({
     required this.phoneNumber,
     required this.botId,
+    required this.botToken,
     required this.botDomain,
     this.timeout = const Duration(seconds: 60),
   });
@@ -140,6 +145,12 @@ class TelegramAuth {
 
         final jsonString = match.group(1)!;
         final userData = _parseUserData(jsonString);
+        final isValid = verifyUserData(userData);
+
+        if (!isValid) {
+          throw Exception('Data verification failed');
+        }
+
         _user = TelegramUser.fromJson(userData);
         return _user;
       }
@@ -210,5 +221,26 @@ class TelegramAuth {
       }
     }
     return null;
+  }
+
+  bool verifyUserData(Map<String, dynamic> userData) {
+    final String receivedHash = userData['hash'];
+
+    // Remove 'hash' from the data
+    final data = Map<String, dynamic>.from(userData)..remove('hash')..remove('raw_json');
+
+    // Sort keys and create data-check-string without empty values
+    final sortedKeys = data.keys.toList()..sort();
+    final dataCheckString = sortedKeys
+        .where((key) => data[key] != null && data[key].toString().isNotEmpty)
+        .map((key) => '$key=${data[key]}')
+        .join('\n');
+
+    // Compute HMAC-SHA256 using SHA256(botToken) as secret key
+    final secretKey = sha256.convert(utf8.encode(botToken)).bytes;
+    final hmac = Hmac(sha256, secretKey);
+    final hash = hmac.convert(utf8.encode(dataCheckString)).bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+    return hash == receivedHash;
   }
 }
