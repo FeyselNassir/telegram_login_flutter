@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:html/parser.dart' show parse;
+import 'package:http/http.dart' as http;
 import 'package:telegram_login_flutter/src/models/login_response.dart';
 import 'package:telegram_login_flutter/src/models/telegram_user.dart';
 import 'package:telegram_login_flutter/src/session.dart';
@@ -11,17 +11,17 @@ class TelegramAuth {
   final TelegramSession _session = TelegramSession();
   final String phoneNumber;
   final String botId;
-  final String botToken;
   final String botDomain;
   final Duration timeout;
+  final String? verificationUrl;
 
   TelegramUser? _user;
 
   TelegramAuth({
     required this.phoneNumber,
     required this.botId,
-    required this.botToken,
     required this.botDomain,
+    this.verificationUrl,
     this.timeout = const Duration(seconds: 60),
   });
 
@@ -145,7 +145,11 @@ class TelegramAuth {
 
         final jsonString = match.group(1)!;
         final userData = _parseUserData(jsonString);
-        final isValid = verifyUserData(userData);
+
+        bool isValid = true;
+        if (verificationUrl != null) {
+          isValid = await verifyUserData(userData);
+        }
 
         if (!isValid) {
           throw Exception('Data verification failed');
@@ -223,26 +227,15 @@ class TelegramAuth {
     return null;
   }
 
-  bool verifyUserData(Map<String, dynamic> userData) {
-    final String receivedHash = userData['hash'];
-
-    // Remove 'hash' from the data
-    final data = Map<String, dynamic>.from(userData)..remove('hash')..remove('raw_json');
-
-    // Sort keys and create data-check-string without empty values
-    final sortedKeys = data.keys.toList()..sort();
-    String dataCheckString = sortedKeys
-        .where((key) => data[key] != null && data[key].toString().isNotEmpty)
-        .map((key) => '$key=${data[key]}')
-        .join('\n');
-
-    dataCheckString = dataCheckString.replaceAll('\\/', '/');
-
-    // Compute HMAC-SHA256 using SHA256(botToken) as secret key
-    final secretKey = sha256.convert(utf8.encode(botToken)).bytes;
-    final hmac = Hmac(sha256, secretKey);
-    final hash = hmac.convert(utf8.encode(dataCheckString)).bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
-    return hash == receivedHash;
+  Future<bool> verifyUserData(Map<String, dynamic> userData) async {
+    if (verificationUrl == null) {
+      throw Exception('Verification url must be provided to validate data.');
+    } 
+    final response = await http.post(
+      Uri.parse(verificationUrl!),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'user_data': userData}),
+    );
+    return response.statusCode == 200;
   }
 }
