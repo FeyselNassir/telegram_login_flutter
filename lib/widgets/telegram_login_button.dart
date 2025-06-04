@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:telegram_login_flutter/src/models/login_response.dart';
 import 'package:telegram_login_flutter/src/models/telegram_user.dart';
 import 'package:telegram_login_flutter/src/telegram_login.dart';
 
@@ -7,6 +8,7 @@ class TelegramLoginButton extends StatefulWidget {
   final String botDomain;
   final String phoneNumber;
   final Duration timeout;
+  final String? verificationUrl;
   final Function(TelegramUser)? onAuthSuccess;
   final Function(dynamic)? onAuthError;
   final Widget? child;
@@ -18,6 +20,7 @@ class TelegramLoginButton extends StatefulWidget {
     required this.botId,
     required this.botDomain,
     required this.phoneNumber,
+    this.verificationUrl,
     this.timeout = const Duration(seconds: 60),
     this.onAuthSuccess,
     this.onAuthError,
@@ -43,6 +46,7 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
       final telegramAuth = TelegramAuth(
         phoneNumber: widget.phoneNumber,
         botId: widget.botId,
+        verificationUrl: widget.verificationUrl,
         botDomain: widget.botDomain,
         timeout: widget.timeout,
       );
@@ -55,11 +59,19 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
       TelegramUser? user;
 
       while (DateTime.now().difference(startTime) < widget.timeout) {
-        isLoggedIn = await telegramAuth.checkLoginStatus();
-        if (isLoggedIn) {
+        final LoginResponse loginResponse = await telegramAuth.checkLoginStatus();
+        if (loginResponse.result == LoginStatus.success) {
           user = await telegramAuth.getUserData();
+          isLoggedIn = true;
           break;
+        } else if (loginResponse.result == LoginStatus.failure) {
+          throw Exception(
+            loginResponse.error ?? 'Login failed',
+          );
+        } else if (loginResponse.result == LoginStatus.loading) {
+          // Still loading, wait and check again
         }
+
         await Future.delayed(const Duration(seconds: 2));
       }
 
